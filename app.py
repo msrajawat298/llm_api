@@ -66,16 +66,22 @@ def get_qa_chain():
 @app.route('/answer', methods=['POST'])
 def answer_question():
     question = request.json.get('question')
+    print(question)
     if not question:
         return jsonify({"error": "Question field is required"}), 400
     chain = get_qa_chain()
     answer = chain(question)
-    return jsonify({"answer": answer})
+
+    if 'result' in answer:
+        return jsonify({"answer": answer['result']})
+    else:
+        return jsonify({"error": "No answer found"}), 404
+
 
 @app.route('/', methods=['GET'])
 def dummy_get():
     return jsonify({"message": "This is a dummy GET request!"})
 
 if __name__ == "__main__":
-    create_vector_db()
+    # create_vector_db()
     app.run(debug=True)
