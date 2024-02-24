@@ -1,0 +1,5 @@
+GOOGLE_API_KEY='enter your api key here' # get this free api key from https://makersuite.google.com/
+ADMIN_USERNAME = 'admin'
+ADMIN_PASSWORD = 'admin123;'
+VECTOR_DB_FILE_PATH= '/app/faiss_index'
+TRAIN_DATA_FILE_PATH= '/app/aboutme.csv'
