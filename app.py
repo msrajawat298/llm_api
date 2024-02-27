@@ -1,43 +1,47 @@
-from flask import Flask, request, jsonify
+import os
+import logging
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
 from langchain.vectorstores import FAISS
 from langchain.llms import GooglePalm
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-import os
-import logging
 
 # Set the logging level to ignore warnings from the sentence_transformers module
 logging.getLogger('sentence_transformers').setLevel(logging.ERROR)
 
-from dotenv import load_dotenv
-load_dotenv()  # take environment variables from .env (especially google Palm api key)
+app = FastAPI()
 
-app = Flask(__name__)
+# Load environment variables
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+VECTOR_DB_FILE_PATH = os.getenv("VECTOR_DB_FILE_PATH")
+TRAIN_DATA_FILE_PATH = os.getenv("TRAIN_DATA_FILE_PATH")
 
 # Create Google Palm LLM model
-llm = GooglePalm(google_api_key=os.environ["GOOGLE_API_KEY"], temperature=0.1)
+llm = GooglePalm(google_api_key=GOOGLE_API_KEY, temperature=0.1)
+
 # Initialize instructor embeddings using the Hugging Face model
 instructor_embeddings = HuggingFaceInstructEmbeddings(model_name="deepset/roberta-large-squad2")
-vectordb_file_path = os.environ["VECTOR_DB_FILE_PATH"]
+
 
 def create_vector_db():
     # Specify the encoding as 'latin-1'
     file_encoding = 'latin-1'
-    loader = CSVLoader(file_path=os.environ["TRAIN_DATA_FILE_PATH"], source_column="prompt", encoding=file_encoding)
+    loader = CSVLoader(file_path=TRAIN_DATA_FILE_PATH, source_column="prompt", encoding=file_encoding)
     # Load data from FAQ sheet
     data = loader.load()
     # Create a FAISS instance for vector database from 'data'
     vectordb = FAISS.from_documents(documents=data, embedding=instructor_embeddings)
 
     # Save vector database locally
-    vectordb.save_local(vectordb_file_path)
+    vectordb.save_local(VECTOR_DB_FILE_PATH)
 
 
 def get_qa_chain():
     # Load the vector database from the local folder
-    vectordb = FAISS.load_local(vectordb_file_path, instructor_embeddings)
+    vectordb = FAISS.load_local(VECTOR_DB_FILE_PATH, instructor_embeddings)
 
     # Create a retriever for querying the vector database
     retriever = vectordb.as_retriever(score_threshold=0.7)
@@ -63,25 +67,31 @@ def get_qa_chain():
 
     return chain
 
-@app.route('/answer', methods=['POST'])
-def answer_question():
-    question = request.json.get('question')
-    print(question)
+
+class Question(BaseModel):
+    question: str
+
+
+@app.post('/answer')
+async def answer_question(request: Request, question_data: Question):
+    question = question_data.question
     if not question:
-        return jsonify({"error": "Question field is required"}), 400
+        raise HTTPException(status_code=400, detail="Question field is required")
     chain = get_qa_chain()
     answer = chain(question)
 
     if 'result' in answer:
-        return jsonify({"answer": answer['result']})
+        return {"answer": answer['result']}
     else:
-        return jsonify({"error": "No answer found"}), 404
+        raise HTTPException(status_code=404, detail="No answer found")
 
 
-@app.route('/', methods=['GET'])
-def dummy_get():
-    return jsonify({"message": "This is a dummy GET request!"})
+@app.get('/')
+async def dummy_get():
+    return {"message": "This is a dummy GET request!"}
+
 
 if __name__ == "__main__":
     # create_vector_db()
-    app.run(debug=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
