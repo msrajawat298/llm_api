@@ -8,6 +8,8 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
+from dotenv import load_dotenv
+load_dotenv()
 
 # Set the logging level to ignore warnings from the sentence_transformers module
 logging.getLogger('sentence_transformers').setLevel(logging.ERROR)
@@ -88,7 +90,7 @@ async def answer_question(request: Request, question_data: Question):
 
 @app.get('/')
 async def dummy_get():
-    return {"message": "This is a dummy GET request!"}
+     return FileResponse("index.html")
 
 
 if __name__ == "__main__":

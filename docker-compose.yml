@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  my-fastapi-app:
+    image: my-fastapi-app:1.1.1
+    restart: always
+    ports:
+      - "8001:8000"  # Only accessible from localhost
+    volumes:
+      - ./:/data
+    command: /bin/sh -c "uvicorn app:app --reload && tail -f /dev/null"
