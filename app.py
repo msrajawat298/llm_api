@@ -9,6 +9,8 @@ from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 from dotenv import load_dotenv
+from fastapi.responses import FileResponse
+
 load_dotenv()
 
 # Set the logging level to ignore warnings from the sentence_transformers module

@@ -8,4 +8,4 @@ services:
       - "8001:8000"  # Only accessible from localhost
     volumes:
       - ./:/data
-    command: /bin/sh -c "uvicorn app:app --reload && tail -f /dev/null"
+    command: /bin/sh -c "git restore app.py && git pull && python app.py && tail -f /dev/null"
