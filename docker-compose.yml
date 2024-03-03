@@ -2,10 +2,8 @@ version: '3'
 
 services:
   my-fastapi-app:
-    image: my-fastapi-app:1.1.1
+    image: msrajawat298/chat_with_mayank
     restart: always
     ports:
-      - "8001:8000"  # Only accessible from localhost
-    volumes:
-      - ./:/data
+      - "80:8000"  # Only accessible from localhost
     command: /bin/sh -c "git restore app.py && git pull && python app.py && tail -f /dev/null"
